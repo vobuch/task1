@@ -1,0 +1,78 @@
+-- **********************************
+-- I expect following simple structure
+
+create table all_goods (
+  id_goods number,
+  id_category number,
+  price number,
+  description varchar2(2000)  
+    );
+insert into all_goods ( id_goods, id_category, price, description) values (1, 1, 120, 'neco');
+insert into all_goods ( id_goods, id_category, price, description) values (2, 1, 99, 'neco');
+insert into all_goods ( id_goods, id_category, price, description) values (3, 2, 50, 'neco');
+insert into all_goods ( id_goods, id_category, price, description) values (4, 1, 180, 'neco');
+insert into all_goods ( id_goods, id_category, price, description) values (5, 1, 180, 'neco');
+
+create table goods_category (
+  id_category number,
+  description varchar2(2000)  
+    );
+insert into goods_category ( id_category, description)  values (1, 'k1');
+insert into goods_category ( id_category, description)  values (1, 'k1');
+
+create table shopping_cart (
+  id_cart number, 
+  id_customer number, 
+  id_goods number);
+
+create sequence seq_cart start with 1 increment by 1;
+
+create table mycustomer (
+  id_customer number,
+  name varchar2(100),
+  surname varchar2(100),
+  email varchar2(100));
+insert into mycustomer ( id_customer, name, surname, email) values ( 111, 'Ruda', 'Pivrnec', 'ruda@gmail.com' );  
+
+
+-- **********************************
+
+declare
+ def_category goods_category.id_category%type;
+ next_id shopping_cart.id_cart%type;
+ max_price_a number;
+ min_price_a number;
+ customer_ident mycustomer.id_customer%type;
+--
+begin
+  -- need to define category and customer
+  def_category := 1;
+  select id_customer into customer_ident from mycustomer
+      where name =  'Ruda';
+  
+  --  finding max and min price for given category  
+  select max(price) into max_price_a from all_goods ag
+      where ag.id_category = def_category;
+  select min(price) into min_price_a from all_goods ag
+      where ag.id_category = def_category;    
+  
+  -- filling into shopping cart    
+  for i in ( select * from all_goods ag
+      where ag.price = max_price_a )
+    loop  
+      select seq_cart.nextval into next_id from dual;
+      insert into shopping_cart (id_cart, id_customer, id_goods) values ( next_id, customer_ident, i.id_goods);
+    end loop;
+    commit;
+  for i in ( select * from all_goods ag
+      where ag.price = min_price_a )
+    loop  
+      select seq_cart.nextval into next_id from dual;
+      insert into shopping_cart (id_cart, id_customer, id_goods) values ( next_id , customer_ident, i.id_goods);
+    end loop;  
+    commit;
+end;    
+
+-- **********************************
+/* confirm result */ 
+select * from    shopping_cart;
